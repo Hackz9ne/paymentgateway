@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful | Student Finance Wallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6200EE;
+            --success: #2E7D32;
+            --bg: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text: #1A1C1E;
+            --text-muted: #6C757D;
+            --border: #E0E0E0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .success-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 450px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            padding: 48px 32px 32px;
+        }
+
+        .success-icon-container {
+            width: 80px;
+            height: 80px;
+            background: #E8F5E9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: var(--success);
+            animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+            }
+
+            to {
+                transform: scale(1);
+            }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .receipt-details {
+            margin: 0 32px 32px;
+            padding: 24px;
+            background: #F1F3F4;
+            border-radius: 20px;
+            text-align: left;
+        }
+
+        .receipt-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .receipt-row:last-child {
+            margin-bottom: 0;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border);
+            margin-top: 12px;
+        }
+
+        .label {
+            color: var(--text-muted);
+        }
+
+        .value {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .amount-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .card-footer {
+            padding: 0 32px 48px;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 18px 32px;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .primary-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(98, 0, 238, 0.2);
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="success-card" id="main-content" style="display: none;">
+        <div class="card-header">
+            <div class="success-icon-container">
+                <svg width="40" height="40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h1>Payment Successful!</h1>
+            <p class="subtitle">Thank you for your payment.</p>
+        </div>
+
+        <div class="receipt-details">
+            <div class="receipt-row">
+                <span class="label">Merchant</span>
+                <span class="value" id="merchant-name">Loading...</span>
+            </div>
+            <div class="receipt-row">
+                <span class="label">Date</span>
+                <span class="value" id="payment-date">-</span>
+            </div>
+            <div class="receipt-row">
+                <span class="label">Reference ID</span>
+                <span class="value" id="reference-id" style="font-family: monospace; font-size: 12px;">-</span>
+            </div>
+            <div class="receipt-row">
+                <span class="label">Total Paid</span>
+                <span class="amount-value" id="amount-val">Rs. 0.00</span>
+            </div>
+        </div>
+
+        <div class="card-footer" id="actions">
+            <!-- Dynamic button will be inserted here -->
+            <button onclick="window.close()" class="primary-btn">Done</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://sxlvxihdgvdrrlfmmusu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4bHZ4aWhkZ3ZkcnJsZm1tdXN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDI4NjQsImV4cCI6MjA4NjExODg2NH0.hjEKovqdb5P--C8Jhirz0_k78aeyMmGIKlR_PLoVzzk';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        async function init() {
+            if (!token) {
+                document.getElementById('loading-overlay').innerHTML = "<h1>Session Error</h1>";
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.rpc('resolve_payment_token_v2', { p_payment_token: token });
+                if (error || !data) throw new Error('Session not found');
+
+                document.getElementById('merchant-name').innerText = data.merchant_name;
+                document.getElementById('amount-val').innerText = `Rs. ${parseFloat(data.amount).toFixed(2)}`;
+                document.getElementById('payment-date').innerText = new Date().toLocaleDateString('en-IN', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                document.getElementById('reference-id').innerText = token.toUpperCase();
+
+                if (data.success_url) {
+                    const actions = document.getElementById('actions');
+                    actions.innerHTML = `
+                        <a href="${data.success_url}" class="primary-btn">
+                            Return to Merchant
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    `;
+                }
+
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+
+            } catch (e) {
+                document.getElementById('loading-overlay').innerHTML = `<h1>Error</h1><p>${e.message}</p>`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

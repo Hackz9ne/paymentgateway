@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout | Student Finance Wallet</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #6200EE;
+            --secondary: #03DAC6;
+            --bg: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text: #1A1C1E;
+            --text-muted: #6C757D;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .checkout-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 450px;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            padding: 32px;
+            text-align: center;
+            background: linear-gradient(135deg, #6200EE, #7C4DFF);
+            color: white;
+        }
+
+        .merchant-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .amount-display {
+            font-size: 42px;
+            font-weight: 800;
+            margin: 12px 0;
+        }
+
+        .card-body {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #qrcode {
+            padding: 16px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #E0E0E0;
+            margin-bottom: 24px;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            background: #F1F3F4;
+            color: #5F6368;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #34A853;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .instructions {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        /* Success State */
+        .success-ui {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #E8F5E9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: #2E7D32;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 24px;
+            transition: 0.2s;
+        }
+
+        .primary-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading-overlay">
+        <p>Initializing Secure Session...</p>
+    </div>
+
+    <div class="checkout-card" id="main-content" style="display: none;">
+        <div class="card-header">
+            <div class="merchant-name" id="merchant-name">Loading...</div>
+            <div class="amount-display" id="amount-display">Rs. 0.00</div>
+        </div>
+
+        <div class="card-body" id="card-body">
+            <div id="qrcode"></div>
+
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                Waiting for payment...
+            </div>
+
+            <p class="instructions">
+                Open <b>Student Wallet</b> app on your phone<br>
+                Scan the QR code to complete payment.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://sxlvxihdgvdrrlfmmusu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4bHZ4aWhkZ3ZkcnJsZm1tdXN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDI4NjQsImV4cCI6MjA4NjExODg2NH0.hjEKovqdb5P--C8Jhirz0_k78aeyMmGIKlR_PLoVzzk';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        let pollingInterval = null;
+
+        async function init() {
+            if (!token) {
+                document.getElementById('loading-overlay').innerHTML = "<h1>Invalid Session</h1><p>No token provided.</p>";
+                return;
+            }
+
+            try {
+                const { data, error } = await supabaseClient.rpc('resolve_payment_token_v2', { p_payment_token: token });
+
+                if (error || !data) throw new Error('Session not found');
+
+                document.getElementById('merchant-name').innerText = data.merchant_name;
+                document.getElementById('amount-display').innerText = `Rs. ${parseFloat(data.amount).toFixed(2)}`;
+
+                if (data.status === 'completed') {
+                    handleSuccess(data);
+                } else if (data.is_expired) {
+                    handleExpired();
+                } else {
+                    renderQRCode();
+                    startPolling();
+                }
+
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+
+            } catch (e) {
+                document.getElementById('loading-overlay').innerHTML = `<h1>Error</h1><p>${e.message}</p>`;
+            }
+        }
+
+        function renderQRCode() {
+            new QRCode(document.getElementById("qrcode"), {
+                text: `APP://PAY?type=session&token=${token}`,
+                width: 200,
+                height: 200,
+                colorDark: "#1A1C1E",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        function startPolling() {
+            pollingInterval = setInterval(async () => {
+                const { data } = await supabaseClient.rpc('resolve_payment_token_v2', { p_payment_token: token });
+                if (data) {
+                    if (data.status === 'completed') {
+                        clearInterval(pollingInterval);
+                        handleSuccess(data);
+                    } else if (data.is_expired) {
+                        clearInterval(pollingInterval);
+                        handleExpired();
+                    }
+                }
+            }, 2500);
+        }
+
+        function handleSuccess(data) {
+            // Add a small delay for better UX before redirection
+            setTimeout(() => {
+                window.location.href = `success.html?token=${token}`;
+            }, 500);
+        }
+
+        function handleExpired() {
+            const body = document.getElementById('card-body');
+            body.innerHTML = `<h2 style="color: #D32F2F;">Session Expired</h2><p>Please regenerate the payment QR.</p>`;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
