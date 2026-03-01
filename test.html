@@ -195,6 +195,15 @@
                             <button onclick="location.reload()" style="margin-top:20px">New Test</button>
                         </div>
                     `;
+                } else if (data.status === 'expired' || data.is_expired) {
+                    clearInterval(interval);
+                    document.getElementById('tester-card').innerHTML = `
+                        <div class="success-box" style="background: #ffebee; color: #c62828;">
+                            <h2>⌛ Session Expired</h2>
+                            <p>This payment link was not paid within the time limit.</p>
+                            <button onclick="location.reload()" style="margin-top:20px; background: #c62828;">New Test</button>
+                        </div>
+                    `;
                 }
             }, 3000);
         }
