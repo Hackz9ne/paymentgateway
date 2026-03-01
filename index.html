@@ -4,293 +4,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout | Student Finance Wallet</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Payment Gateway Tester</title>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
     <style>
         :root {
             --primary: #6200EE;
-            --secondary: #03DAC6;
             --bg: #F8F9FA;
             --card-bg: #FFFFFF;
-            --text: #1A1C1E;
-            --text-muted: #6C757D;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         body {
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            margin: 0;
             padding: 20px;
         }
 
-        .checkout-card {
+        .container {
             background: var(--card-bg);
-            width: 100%;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             max-width: 450px;
-            border-radius: 28px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%;
+        }
+
+        h1 {
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #EEE;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: monospace;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #result {
+            margin-top: 24px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.3s;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
             }
 
             to {
                 opacity: 1;
-                transform: translateY(0);
             }
-        }
-
-        .card-header {
-            padding: 32px;
-            text-align: center;
-            background: linear-gradient(135deg, #6200EE, #7C4DFF);
-            color: white;
-        }
-
-        .merchant-name {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-
-        .amount-display {
-            font-size: 42px;
-            font-weight: 800;
-            margin: 12px 0;
-        }
-
-        .card-body {
-            padding: 32px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
 
         #qrcode {
+            display: inline-block;
             padding: 16px;
             background: white;
-            border-radius: 20px;
-            border: 1px solid #E0E0E0;
-            margin-bottom: 24px;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            background: #F1F3F4;
-            color: #5F6368;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: #34A853;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-
-            50% {
-                transform: scale(1.5);
-                opacity: 0.5;
-            }
-
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        .instructions {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        #loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        /* Success State */
-        .success-ui {
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        .success-icon {
-            width: 80px;
-            height: 80px;
-            background: #E8F5E9;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 24px;
-            color: #2E7D32;
-        }
-
-        .primary-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 16px 32px;
             border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 24px;
-            transition: 0.2s;
         }
 
-        .primary-btn:hover {
-            filter: brightness(1.1);
-            transform: translateY(-1px);
+        .success-box {
+            background: #E8F5E9;
+            color: #2E7D32;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: center;
         }
     </style>
 </head>
 
 <body>
-    <div id="loading-overlay">
-        <p>Initializing Secure Session...</p>
-    </div>
+    <div class="container" id="tester-card">
+        <h1>Payment Tester</h1>
 
-    <div class="checkout-card" id="main-content" style="display: none;">
-        <div class="card-header">
-            <div class="merchant-name" id="merchant-name">Loading...</div>
-            <div class="amount-display" id="amount-display">Rs. 0.00</div>
+        <div class="input-group">
+            <label>API KEY</label>
+            <input type="text" id="apiKey" placeholder="Your 24-char API key">
         </div>
 
-        <div class="card-body" id="card-body">
+        <div class="input-group">
+            <label>API SECRET</label>
+            <input type="password" id="apiSecret" placeholder="Your API Secret">
+        </div>
+
+        <button onclick="generate()">Generate 2 Rs Payment</button>
+
+        <div id="result">
+            <p style="margin-bottom: 12px; font-weight: 600;">Scan to Pay</p>
             <div id="qrcode"></div>
-
-            <div class="status-badge">
-                <div class="status-dot"></div>
-                Waiting for payment...
-            </div>
-
-            <p class="instructions">
-                Open <b>Student Wallet</b> app on your phone<br>
-                Scan the QR code to complete payment.
-            </p>
+            <p style="font-size: 12px; color: #666; margin-top: 12px;">Waiting for app confirmation...</p>
         </div>
     </div>
 
     <script>
         const SUPABASE_URL = 'https://sxlvxihdgvdrrlfmmusu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4bHZ4aWhkZ3ZkcnJsZm1tdXN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDI4NjQsImV4cCI6MjA4NjExODg2NH0.hjEKovqdb5P--C8Jhirz0_k78aeyMmGIKlR_PLoVzzk';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4bHZ4aWhkZ3ZkcnJsZm1tdXN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA1NDI4NjQsImV4cCI6MjA4NjExODg2NH0.hjEKovqdb5P--C8Jhirz0_k78aeyMmGIKlR_PLoVzzk';
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        let pollingInterval = null;
+        async function generate() {
+            const apiKey = document.getElementById('apiKey').value;
+            const apiSecret = document.getElementById('apiSecret').value;
+            const resDiv = document.getElementById('result');
 
-        async function init() {
-            if (!token) {
-                document.getElementById('loading-overlay').innerHTML = "<h1>Invalid Session</h1><p>No token provided.</p>";
-                return;
-            }
+            if (!apiKey || !apiSecret) return alert('Enter credentials');
 
-            try {
-                const { data, error } = await supabaseClient.rpc('resolve_payment_token_v2', { p_payment_token: token });
+            const timestamp = new Date().toISOString();
+            const amount = "2"; // Use 2 instead of 2.0 to avoid JSON stringify mismatch
+            const successUrl = "https://yourdomain.com/success";
 
-                if (error || !data) throw new Error('Session not found');
+            const apiKeyHash = CryptoJS.SHA256(apiKey).toString();
+            const signature = CryptoJS.HmacSHA256(amount + successUrl + timestamp, apiSecret).toString();
 
-                document.getElementById('merchant-name').innerText = data.merchant_name;
-                document.getElementById('amount-display').innerText = `Rs. ${parseFloat(data.amount).toFixed(2)}`;
-
-                if (data.status === 'completed') {
-                    handleSuccess(data);
-                } else if (data.is_expired) {
-                    handleExpired();
-                } else {
-                    renderQRCode();
-                    startPolling();
-                }
-
-                document.getElementById('loading-overlay').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-
-            } catch (e) {
-                document.getElementById('loading-overlay').innerHTML = `<h1>Error</h1><p>${e.message}</p>`;
-            }
-        }
-
-        function renderQRCode() {
-            new QRCode(document.getElementById("qrcode"), {
-                text: `APP://PAY?type=session&token=${token}`,
-                width: 200,
-                height: 200,
-                colorDark: "#1A1C1E",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/create_hosted_session_v3`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': ANON_KEY,
+                    'Authorization': `Bearer ${ANON_KEY}`
+                },
+                body: JSON.stringify({
+                    p_api_key_hash: apiKeyHash,
+                    p_amount: Number(amount),
+                    p_success_url: successUrl,
+                    p_cancel_url: 'https://yourdomain.com/cancel',
+                    p_signature: signature,
+                    p_timestamp: timestamp
+                })
             });
+
+            const data = await response.json();
+            if (data.payment_token) {
+                document.getElementById('qrcode').innerHTML = '';
+                new QRCode(document.getElementById('qrcode'), {
+                    text: `APP://PAY?type=session&token=${data.payment_token}`,
+                    width: 180, height: 180
+                });
+                resDiv.style.display = 'block';
+                startPolling(data.payment_token);
+            }
         }
 
-        function startPolling() {
-            pollingInterval = setInterval(async () => {
-                const { data } = await supabaseClient.rpc('resolve_payment_token_v2', { p_payment_token: token });
-                if (data) {
-                    if (data.status === 'completed') {
-                        clearInterval(pollingInterval);
-                        handleSuccess(data);
-                    } else if (data.is_expired) {
-                        clearInterval(pollingInterval);
-                        handleExpired();
-                    }
+        function startPolling(token) {
+            const interval = setInterval(async () => {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/resolve_payment_token_v2`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY, 'Authorization': `Bearer ${ANON_KEY}` },
+                    body: JSON.stringify({ p_payment_token: token })
+                });
+                const data = await res.json();
+                if (data.status === 'completed') {
+                    clearInterval(interval);
+                    document.getElementById('tester-card').innerHTML = `
+                        <div class="success-box">
+                            <h2>✅ Payment Received!</h2>
+                            <p>RS ${data.amount} successfully added to your merchant account.</p>
+                            <button onclick="location.reload()" style="margin-top:20px">New Test</button>
+                        </div>
+                    `;
                 }
-            }, 2500);
+            }, 3000);
         }
-
-        function handleSuccess(data) {
-            // Add a small delay for better UX before redirection
-            setTimeout(() => {
-                window.location.href = `success.html?token=${token}`;
-            }, 500);
-        }
-
-        function handleExpired() {
-            const body = document.getElementById('card-body');
-            body.innerHTML = `<h2 style="color: #D32F2F;">Session Expired</h2><p>Please regenerate the payment QR.</p>`;
-        }
-
-        init();
     </script>
 </body>
 
