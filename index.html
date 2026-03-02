@@ -374,7 +374,7 @@
             }
 
             const body = document.getElementById('card-body');
-            body.innerHTML = \`
+            body.innerHTML = `
                 <div style="padding: 40px 20px; text-align: center;">
                     <div style="width: 64px; height: 64px; background: #E8F5E9; color: #2E7D32; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
                         <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
@@ -382,10 +382,10 @@
                     <h3>Payment Successful!</h3>
                     <p style="color: #666; margin-top: 8px;">Closing window...</p>
                 </div>
-            \`;
+            `;
             setTimeout(() => {
                 if (window.opener) window.close();
-                else window.location.href = \`success.html?token=\${token}\`;
+                else window.location.href = `success.html?token=${token}`;
             }, 2000);
         }
 
@@ -394,12 +394,12 @@
                 window.opener.postMessage({ type: 'YOURPAY_ERROR', data: 'Payment session expired' }, '*');
             }
             const body = document.getElementById('card-body');
-            body.innerHTML = \`
+            body.innerHTML = `
                 <div style="padding: 40px 20px; text-align: center;">
                     <h3 style="color: #D32F2F;">Session Expired</h3>
                     <p style="color: #666; margin-top: 8px;">Please regenerate the payment QR.</p>
                 </div>
-            \`;
+            `;
         }
         
         function cancelPayment() {
