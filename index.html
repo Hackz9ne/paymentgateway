@@ -255,13 +255,6 @@
             <div class="merchant-icon" id="merchant-icon">A</div>
             <div class="merchant-info">
                 <div class="merchant-name" id="merchant-name">Loading...</div>
-                <div class="trusted-badge">
-                    <svg class="trusted-icon" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
-                    </svg>
-                    Trusted Business
-                </div>
             </div>
             <button class="close-btn" onclick="cancelPayment()">
                 <svg viewBox="0 0 24 24">
@@ -271,7 +264,7 @@
             </button>
         </div>
 
-        <div class="payment-options-title">Cards, UPI & More</div>
+
 
         <!-- Body -->
         <div class="content-body" id="card-body">
@@ -285,7 +278,12 @@
                 Open <b>Student Wallet App</b> and scan the QR code to complete this transaction securely.
             </p>
 
-            <button class="pay-btn-placeholder">Waiting for payment...</button>
+            <div id="timer-container" style="margin-top: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; color: #555;" title="Click for more info">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                <span id="countdown">02:00</span>
+            </div>
+
+            <button class="pay-btn-placeholder" style="margin-top: 24px;">Waiting for payment...</button>
         </div>
 
         <!-- Watermark -->
@@ -331,6 +329,7 @@
                 } else {
                     renderQRCode();
                     startPolling();
+                    startTimer();
                 }
 
                 document.getElementById('loading-overlay').style.display = 'none';
@@ -365,6 +364,32 @@
                     }
                 }
             }, 2500);
+        }
+
+        function startTimer() {
+            let timeLeft = 120;
+            const timerEl = document.getElementById('countdown');
+            const timerContainer = document.getElementById('timer-container');
+
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                const m = Math.floor(timeLeft / 60);
+                const s = timeLeft % 60;
+                timerEl.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+                if (timeLeft <= 30) {
+                    timerContainer.style.color = '#D32F2F';
+                }
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    handleExpired();
+                }
+            }, 1000);
+
+            timerContainer.onclick = () => {
+                alert("⚠️ URGENT MESSAGE: This payment session is about to expire. Please scan the QR code and complete the transaction in your app quickly to avoid timeout!");
+            };
         }
 
         function handleSuccess(data) {
