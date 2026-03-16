@@ -41,55 +41,102 @@ Content-Type: application/json
 {
   "session_id": "abc123xyz",
   "payment_token": "pay_token_...",
+  "payment_url": "https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/checkout?token=pay_token_...",
   "merchant_name": "Student Wallet",
   "amount": 500.00
 }
 ```
 
----
+### Check Payment Status
 
-## 4. Checkout SDK (JavaScript)
+`GET /functions/v1/api-gateway/status?token=<payment_token>`
 
-Include the SDK:
+**Response:**
 
-```html
-<script src="https://cdn.yourapp.com/sdk/checkout.js"></script>
+```json
+{
+  "status": "completed",
+  "is_expired": false,
+  "amount": 500.00,
+  "order_id": "ORD_998877"
+}
 ```
 
-Launch Checkout:
+**Status Values:** `pending`, `completed`, `expired`, `failed`
+
+---
+
+## 4. Frontend Integration
+
+### Pre-requisites
+
+Include the following script in your HTML `<head>` or before the closing `</body>` tag:
+
+```html
+<script src="https://your-cdn-link.com/checkout.js"></script>
+```
+
+### A. Professional Server-Side Flow (Recommended)
+
+1. Use your backend (Python/Node/PHP) to create a session via the `/session` API.
+2. Pass the returned `payment_token` to your frontend.
+3. Launch the checkout modal:
+
+1. Use Python/Node to create a session via the Gateway.
+2. Pass the `payment_token` to your frontend.
+3. Launch the checkout:
 
 ```javascript
 YourPay.open({
-    apiKey: "your_public_api_key",
+    token: "pay_token_12345",
+    onSuccess: (data) => console.log("Success!", data),
+    onFailure: (err) => console.error("Error", err)
+});
+```
+
+### B. Client-Side Quick Start (Test Mode Only)
+
+*Warning: This exposes your API key to the browser.*
+
+```javascript
+YourPay.open({
+    apiKey: "yp_test_...",
     amount: 500.00,
     orderId: "ORD_123",
-    onSuccess: function(data) {
-        console.log("Payment Successful:", data);
-        window.location.href = "/success";
-    },
-    onFailure: function(error) {
-        console.error("Payment Failed:", error);
-    }
+    onSuccess: (data) => location.href = "/success"
 });
 ```
 
 ---
 
-## 5. Flutter Integration
+## 5. In-App Purchase (Flutter SDK)
 
-Add the `yourpay_sdk.dart` to your project and use:
+The YourPay SDK provides a beautiful, animated bottom sheet for processing payments directly within your app.
+
+Create the session on your backend and launch the UI in Flutter using the returned `token`. The SDK handles the QR generation and polling automatically.
 
 ```dart
-YourPay.openPayment(
-  apiKey: "yp_live_...",
-  amount: 250.0,
-  orderId: "INV-001",
-  onSuccess: (data) {
-    print("Success: $data");
-  },
-  onFailure: (error) {
-    print("Error: $error");
-  },
+// Launch checkout using a pre-created token
+YourPay.open(
+  context,
+  token: "pay_token_9988",
+  merchantName: "Student Wallet",
+  onSuccess: (data) => print("Paid successfully! Status: ${data['status']}"),
+  onFailure: (err) => print("Failed: $err"),
+);
+```
+
+*Warning: Use this only for rapid prototyping. Avoid in production.*
+
+```dart
+YourPay.open(
+  context,
+  apiKey: "yp_test_...",
+  amount: 500.00,
+  orderId: "ORD_123",
+  merchantName: "Student Wallet",
+  onSuccess: (data) => Navigator.pushNamed(context, '/success'),
+  onFailure: (err) => print("Payment failed: $err"),
 );
 ```
 
@@ -104,7 +151,7 @@ import webbrowser  # Added this to handle the "popout"
 
 # 1. Configuration 
 API_BASE_URL = "https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway"
-MERCHANT_KEY = "your_apikey"
+MERCHANT_KEY = "your-apikey"
 
 def create_payment(amount, order_id):
     url = f"{API_BASE_URL}/session"
@@ -125,7 +172,7 @@ def check_status(payment_token):
 # --- Example Usage ---
 
 # Step 1: Create a payment
-session = create_payment(150.00, "ORDER_PY_99")
+session = create_payment(2.00, "ORDER_PY_99")
 
 if 'error' in session:
     print(f"Error: {session['error']}")
@@ -153,6 +200,7 @@ else:
             break
             
         time.sleep(5)
+
 ```
 
 ---
@@ -173,28 +221,64 @@ A: Yes. Polling only reveals public status. The actual debit happens securely on
 
 ---
 
-## 8. AI Integration Prompt
+AI Integration Prompt
 
 Copy and paste this into any AI (ChatGPT, Claude, etc.) to integrate YourPay:
 
-> "I want to integrate the YourPay QR payment gateway into my [Website/App].
-> I have my API Key. Please write the code to launch the checkout modal for an amount of [Amount] and handle the success callback by redirecting to my success page."
+> "I want to integrate the YourPay QR payment gateway into my [Website/App]. 
+> I am using the `checkout.js` library (JavaScript) or the provided Flutter SDK.
+> Pre-requisite: I have my API Key. 
+> Please write the code to:
+> 1. Create a payment session server-side using the `/session` endpoint.
+> 2. Initialize the `YourPay.open` modal in the frontend using the `payment_token`.
+> 3. Handle the `onSuccess` callback by redirecting to `/success`."
 
 ---
 
-## 9. cURL Examples
+**Create Session (Server-Side):**
 
-**Create Session:**
+### Bash / Linux / macOS
 
 ```bash
 curl -X POST https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/session \
-     -H "X-Merchant-Key: your_api_key" \
+     -H "X-Merchant-Key: your_merchant_key" \
      -H "Content-Type: application/json" \
-     -d '{"amount": 150, "order_id": "ORDER_101"}'
+     -d '{"amount": 100, "order_id": "CURL_777"}'
+```
+
+### Windows (PowerShell)
+
+*Note: This is the native and most reliable way to test on Windows.*
+
+```powershell
+$headers = @{ "X-Merchant-Key" = "your_merchant_key"; "Content-Type" = "application/json" }
+$body = @{ amount = 100; order_id = "CURL_777" } | ConvertTo-Json
+
+Invoke-RestMethod -Uri "https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/session" `
+    -Method Post -Headers $headers -Body $body
 ```
 
 **Check Status:**
 
 ```bash
-curl -X GET "https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/status?token=your_token_here"
+curl -X GET "https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/status?token=pay_token_123"
+```
+
+---
+
+## 10. Node.js Integration
+
+```javascript
+const axios = require('axios');
+
+async function createPayment() {
+    const res = await axios.post('https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/session', {
+        amount: 250,
+        order_id: "NODE_99"
+    }, {
+        headers: { 'X-Merchant-Key': 'your_apikey' }
+    });
+    
+    console.log('Checkout URL:', res.data.payment_url);
+}
 ```
