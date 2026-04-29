@@ -527,10 +527,15 @@
             const deepLink = `studentwallet://pay?session_id=${token}`;
             window.location.href = deepLink;
             
+            const start = Date.now();
             setTimeout(() => {
-                window.location.href = 'https://student-finance-wallet.42web.io/install';
+                // Check if user is still on the page and hasn't been redirected to the app
+                if (!document.hidden && (Date.now() - start < 3000)) {
+                    window.location.href = 'https://student-finance-wallet.42web.io/install';
+                }
             }, 2000);
         }
+
 
         function downloadApp() {
             window.location.href = 'https://student-finance-wallet.42web.io/install';
