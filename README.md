@@ -8,10 +8,15 @@ YourPay provides a hosted checkout experience where users pay by scanning a dyna
 
 ## 2. Authentication
 
-All API requests must include your Merchant API Key in the headers or as a hash depending on the SDK.
+All API requests must include your Merchant API Key, Timestamp, Nonce, and an HMAC SHA256 Signature in the headers. 
 
-- **Test Mode**: Use keys starting with `yp_test_`
-- **Live Mode**: Use keys starting with `yp_live_`
+- **X-Merchant-Key**: Your public API key (`yp_test_...` or `yp_live_...`)
+- **X-Timestamp**: The current ISO8601 timestamp in UTC.
+- **X-Nonce**: A random string or incremental integer uniquely identifying the request.
+- **X-Signature**: Cryptographic HMAC-SHA256 string matching the format below.
+
+### Generating The Signature
+Combine parameters according to standard formats: `Signature = HexEncode(HmacSHA256(Payload + Timestamp + Nonce, api_secret))`.
 
 ## 3. Core API (REST)
 
@@ -19,12 +24,20 @@ All API requests must include your Merchant API Key in the headers or as a hash 
 
 `POST /functions/v1/api-gateway/session`
 
+> [!IMPORTANT]
+> Both the **Merchant API Key** and the **API Secret** are strictly required. The Secret is used to generate the cryptographic `X-Signature` header. If either component is missing or invalid, the payment session will not be created.
+
 **Headers:**
+
 
 ```http
 X-Merchant-Key: <your_merchant_api_key>
+X-Signature: <generated_hmac_hex>
+X-Timestamp: <iso8601_timestamp>
+X-Nonce: <unique_identifier>
 Content-Type: application/json
 ```
+
 
 **Body:**
 
@@ -96,7 +109,8 @@ YourPay.open({
 
 ### B. Client-Side Quick Start (Test Mode Only)
 
-*Warning: This exposes your API key to the browser.*
+*Warning: This method requires generating the signature. Exposing your API Secret in the browser is highly discouraged.*
+
 
 ```javascript
 YourPay.open({
@@ -126,18 +140,24 @@ YourPay.open(
 );
 ```
 
-*Warning: Use this only for rapid prototyping. Avoid in production.*
+> [!IMPORTANT]
+> Direct client-side session creation using API Keys is strictly disabled to prevent security compromises. You must generate the `payment_token` securely on your backend server and pass it to the SDK.
 
-```dart
-YourPay.open(
-  context,
-  apiKey: "yp_test_...",
-  amount: 500.00,
-  orderId: "ORD_123",
-  merchantName: "Student Wallet",
-  onSuccess: (data) => Navigator.pushNamed(context, '/success'),
-  onFailure: (err) => print("Payment failed: $err"),
-);
+
+### C. Deep Linking (Mobile App)
+
+If you are integrating from a mobile web experience or another app, you can launch the official Student Wallet App directly to complete the payment using the following deep link format:
+
+```
+studentwallet://pay?session_id={payment_token}
+```
+
+**Parameters:**
+- `session_id`: The `payment_token` returned by the Create Payment Session API.
+
+**Example (Web/JavaScript):**
+```javascript
+window.location.href = `studentwallet://pay?session_id=${payment_token}`;
 ```
 
 ---
@@ -270,15 +290,37 @@ curl -X GET "https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/s
 
 ```javascript
 const axios = require('axios');
+const crypto = require('crypto');
 
 async function createPayment() {
+    const amount = 250;
+    const order_id = "NODE_99";
+    const apiKey = 'your_api_key';
+    const apiSecret = 'your_api_secret';
+    
+    const timestamp = new Date().toISOString();
+    const nonce = Date.now().toString();
+    
+    // Payload depends on endpoint (e.g., amount + order_id)
+    const payload = amount.toString() + order_id;
+    const signature = crypto
+        .createHmac('sha256', apiSecret)
+        .update(payload + timestamp + nonce)
+        .digest('hex');
+
     const res = await axios.post('https://sxlvxihdgvdrrlfmmusu.supabase.co/functions/v1/api-gateway/session', {
-        amount: 250,
-        order_id: "NODE_99"
+        amount: amount,
+        order_id: order_id
     }, {
-        headers: { 'X-Merchant-Key': 'your_apikey' }
+        headers: { 
+            'X-Merchant-Key': apiKey,
+            'X-Signature': signature,
+            'X-Timestamp': timestamp,
+            'X-Nonce': nonce
+        }
     });
     
     console.log('Checkout URL:', res.data.payment_url);
 }
 ```
+
