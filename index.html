@@ -234,7 +234,77 @@
                 transform: rotate(360deg);
             }
         }
+        /* Mobile Actions */
+        .mobile-actions {
+            display: none;
+            width: 100%;
+            margin-top: 20px;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .or-separator {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 16px 0;
+            width: 100%;
+        }
+
+        .or-separator::before,
+        .or-separator::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        .or-separator:not(:empty)::before {
+            margin-right: .5em;
+        }
+
+        .or-separator:not(:empty)::after {
+            margin-left: .5em;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-open-app {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(43, 100, 245, 0.2);
+        }
+
+        .btn-open-app:hover {
+            background: #1A53D8;
+        }
+
+        .btn-download {
+            background: white;
+            color: var(--text);
+            border: 1px solid #E0E0E0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-download:hover {
+            background: #F8F9FA;
+        }
     </style>
+
 </head>
 
 <body>
@@ -272,6 +342,18 @@
 
             <div class="qr-wrapper" id="qrcode"
                 style="width: 212px; height: 212px; display: flex; align-items: center; justify-content: center;"></div>
+
+            <div id="mobile-actions" class="mobile-actions">
+                <div class="or-separator">OR</div>
+                <button class="btn-action btn-open-app" onclick="openInApp()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                    Open in Student Wallet App
+                </button>
+                <button class="btn-action btn-download" onclick="downloadApp()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download App
+                </button>
+            </div>
 
             <p class="scan-instruction">
                 <b>Scan to Pay</b><br>
@@ -436,7 +518,26 @@
             }
         }
 
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.getElementById('mobile-actions').style.display = 'flex';
+        }
+
+        function openInApp() {
+            const deepLink = `studentwallet://pay?session_id=${token}`;
+            window.location.href = deepLink;
+            
+            setTimeout(() => {
+                window.location.href = 'https://student-finance-wallet.42web.io/install';
+            }, 2000);
+        }
+
+        function downloadApp() {
+            window.location.href = 'https://student-finance-wallet.42web.io/install';
+        }
+
         init();
+
     </script>
 </body>
 
